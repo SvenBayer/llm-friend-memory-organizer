@@ -1,0 +1,33 @@
+server:
+  port: 8078
+
+spring:
+  application:
+    name: llm-friend-memory-organizer
+  ai:
+    ollama:
+      chat:
+        # model: mistral:7b-instruct-v0.3-q8_0
+        model: deepseek-r1:14b
+        # model: deepseek-r1:8b
+        # model: llama3.1:8b
+        # model: llama3.2:3b
+        # model: deepseek-r1:1.5b
+      embedding:
+        model: nomic-embed-text
+    vectorstore:
+      qdrant:
+        host: localhost
+        port: 6334
+        collection-name: vector_store
+        initialize-schema: true
+        dimension: 768
+
+de:
+  sven:
+    bayer:
+      llm:
+        friend:
+          chatbot:
+            llmName: Lumi
+            maxSummarizationLength: 30
