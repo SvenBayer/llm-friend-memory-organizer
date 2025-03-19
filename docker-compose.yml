@@ -1,0 +1,15 @@
+services:
+  neo4j:
+    image: neo4j:community-ubi9
+    volumes:
+      - ./data/neo4j/logs:/logs
+      - ./data/neo4j/config:/config
+      - ./data/neo4j/data:/data
+      - ./data/neo4j/plugins:/plugins
+    environment:
+      - NEO4J_AUTH=neo4j/myTh0ughtsAreMine! # highly unsecure but it's a demo
+      - NEO4J_server_jvm_additional=-XX:+UseG1GC --add-modules jdk.incubator.vector
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    restart: always

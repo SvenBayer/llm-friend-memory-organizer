@@ -1,15 +1,14 @@
 package de.svenbayer.llm_friend_memory_organizer.service;
 
-import de.svenbayer.llm_friend_memory_organizer.model.MemoryCategory;
+import de.svenbayer.llm_friend_memory_organizer.component.LineElementsComponent;
+import de.svenbayer.llm_friend_memory_organizer.service.entity.EntityCreatorService;
 import de.svenbayer.llm_friend_memory_organizer.service.process.OllamaProcessService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.vectorstore.neo4j.Neo4jVectorStore;
 import org.springframework.stereotype.Service;
 
-import java.text.BreakIterator;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class DeepMemoryService {
@@ -17,27 +16,85 @@ public class DeepMemoryService {
     private final DeepMemorySystemPromptService promptService;
     private final ChatClient chatClient;
     private final OllamaProcessService ollamaProcessService;
+    private final Neo4jVectorStore vectorStore;
+    private final EntityCreatorService entityCreatorService;
+    private final LineElementsComponent lineElementsComponent;
 
-    public DeepMemoryService(DeepMemorySystemPromptService promptService, ChatClient.Builder chatClientBuilder, OllamaProcessService ollamaProcessService) {
+    public DeepMemoryService(DeepMemorySystemPromptService promptService, ChatClient.Builder chatClientBuilder, OllamaProcessService ollamaProcessService, Neo4jVectorStore vectorStore, EntityCreatorService entityCreatorService, LineElementsComponent lineElementsComponent) {
         this.promptService = promptService;
         this.chatClient = chatClientBuilder.build();
         this.ollamaProcessService = ollamaProcessService;
+        this.vectorStore = vectorStore;
+        this.entityCreatorService = entityCreatorService;
+        this.lineElementsComponent = lineElementsComponent;
     }
 
     public void memorizeMessage(String userMessage) {
-        for (String sentence : splitIntoSentences(userMessage)) {
-            boolean storeMessage = isStoreMessage(sentence);
-            if (storeMessage) {
-                System.out.println("Message found '" + sentence);
-            }
-        }
+        processMessageToGraphInformation(userMessage);
         ollamaProcessService.stopOllamaContainer();
     }
 
-    private boolean isStoreMessage(String userMessage) {
-        System.out.println("User message: " + userMessage);
-        Prompt informationRelevantPrompt = promptService.getInformationRelevantPrompt(userMessage);
+    private boolean processMessageToGraphInformation(String userMessage) {
+        System.out.println("User message:\n" + userMessage);
 
+        String informationExtractedMessage = processToInformationMessage(userMessage);
+        String relationshipMessage = processToRelationshipMessage(userMessage);
+        String informationCategorizedMessage = processToCategorizedMessage(informationExtractedMessage, relationshipMessage);
+        String taggedInformationMessage = processToTaggedMessage(informationCategorizedMessage);
+
+        entityCreatorService.createPeopleEntities(informationCategorizedMessage);
+        entityCreatorService.createCategoriesAndTopics(taggedInformationMessage);
+        createTopTopics(taggedInformationMessage);
+        createTimeEntities(informationExtractedMessage);
+
+        return true;
+    }
+
+    private void createTimeEntities(String informationExtractedMessage) {
+        Prompt extractTimePrompt = promptService.getExtractTimePrompt(informationExtractedMessage);
+        String timeMessage = processMessage(extractTimePrompt);
+        System.out.println("Times:\n" + timeMessage);
+        entityCreatorService.createTimeEntities(timeMessage);
+    }
+
+    private void createTopTopics(String taggedInformationMessage) {
+        List<String> topics = entityCreatorService.extractTopics(taggedInformationMessage);
+        Prompt topTopicsPrompt = promptService.getTopTopicsPrompt(topics);
+        String topTopics = processMessage(topTopicsPrompt);
+        System.out.println("Top Topics:\n" + topTopics);
+        entityCreatorService.createTopTopics(topTopics);
+    }
+
+    private String processToTaggedMessage(String informationCategorizedMessage) {
+        Prompt taggedInformationPrompt = promptService.getTagInformationPrompt(informationCategorizedMessage);
+        String taggedInformationMessage = processMessage(taggedInformationPrompt);
+        System.out.println("Tagged Information:\n" + taggedInformationMessage);
+        return taggedInformationMessage;
+    }
+
+    private String processToCategorizedMessage(String informationExtractedMessage, String relationshipMessage) {
+        String enumerationWithRelationshipsMessage = lineElementsComponent.appendEnumerationList(informationExtractedMessage, relationshipMessage);
+        Prompt categorizeInformationPrompt = promptService.getCategorizeInformationPrompt(enumerationWithRelationshipsMessage);
+        String informationCategorizedMessage = processMessage(categorizeInformationPrompt);
+        System.out.println("Categorized Information:\n" + informationCategorizedMessage);
+        return informationCategorizedMessage;
+    }
+
+    private String processToRelationshipMessage(String userMessage) {
+        Prompt relationshipConclusionPrompt = promptService.getRelationshipConclusionPrompt(userMessage);
+        String relationshipMessage = processMessage(relationshipConclusionPrompt);
+        System.out.println("Extracted Relationships\n" + relationshipMessage);
+        return relationshipMessage;
+    }
+
+    private String processToInformationMessage(String userMessage) {
+        Prompt informationRelevantPrompt = promptService.getExtractInformationPrompt(userMessage);
+        String informationExtractedMessage = processMessage(informationRelevantPrompt);
+        System.out.println("Extracted Information:\n" + informationExtractedMessage);
+        return informationExtractedMessage;
+    }
+
+    private String processMessage(Prompt informationRelevantPrompt) {
         String storeMessage = chatClient.prompt()
                 .user(informationRelevantPrompt.getContents())
                 .call()
@@ -49,31 +106,6 @@ public class DeepMemoryService {
         } else {
             decisionMessage = storeMessage;
         }
-        System.out.println("Decision: " + decisionMessage);
-        if (decisionMessage.contains("<YES>")) {
-            return true;
-        } else if (decisionMessage.contains("<NO>")) {
-            return false;
-        }
-        return false;
-        //throw new IllegalStateException("No decision could be made: " + decisionMessage);
-    }
-
-    private List<String> splitIntoSentences(String userMessage) {
-        List<String> sentences = new ArrayList<>();
-        BreakIterator iterator = BreakIterator.getSentenceInstance(Locale.US);
-        iterator.setText(userMessage);
-        int start = iterator.first();
-        int end = iterator.next();
-
-        while (end != BreakIterator.DONE) {
-            String sentence = userMessage.substring(start, end).trim();
-            if (!sentence.isEmpty()) {
-                sentences.add(sentence);
-            }
-            start = end;
-            end = iterator.next();
-        }
-        return sentences;
+        return decisionMessage;
     }
 }
