@@ -1,6 +1,7 @@
-package de.svenbayer.llm_friend_memory_organizer.service;
+package de.svenbayer.llm_friend_memory_organizer.service.llm;
 
 import de.svenbayer.llm_friend_memory_organizer.config.ConfigProperties;
+import de.svenbayer.llm_friend_memory_organizer.model.message.*;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,7 +9,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -25,11 +25,11 @@ public class DeepMemorySystemPromptService {
     @Value("classpath:templates/categorize-information-prompt.st")
     private Resource categorizeInformationPromptTemplate;
 
+    @Value("classpath:templates/extract-user-prompt.st")
+    private Resource extractUserPromptTemplate;
+
     @Value("classpath:templates/tag-information-prompt.st")
     private Resource tagInformationPromptTemplate;
-
-    @Value("classpath:templates/add-people-prompt.st")
-    private Resource addPeoplePromptTemplate;
 
     @Value("classpath:templates/extract-time-prompt.st")
     private Resource extractTimePromptTemplate;
@@ -41,35 +41,34 @@ public class DeepMemorySystemPromptService {
         this.configProperties = configProperties;
     }
 
-    public Prompt getExtractInformationPrompt(String userMessage) {
+    public Prompt getExtractInformationPrompt(UserMessage userMessage) {
         Map<String, Object> params = new HashMap<>();
-        params.put("userMessage", userMessage);
+        params.put("userMessage", userMessage.getMessage());
         return createPromptFromTemplate(this.extractInformationPromptTemplate, params);
     }
 
-    public Prompt getRelationshipConclusionPrompt(String userMessage) {
+    public Prompt getRelationshipConclusionPrompt(UserMessage userMessage) {
         Map<String, Object> params = new HashMap<>();
-        params.put("userMessage", userMessage);
+        params.put("userMessage", userMessage.getMessage());
         return createPromptFromTemplate(this.relationshipConclusionPromptTemplate, params);
     }
 
-    public Prompt getCategorizeInformationPrompt(String userMessage) {
+    public Prompt getCategorizeInformationPrompt(String message) {
         Map<String, Object> params = new HashMap<>();
-        params.put("userMessage", userMessage);
+        params.put("userMessage", message);
         return createPromptFromTemplate(this.categorizeInformationPromptTemplate, params);
     }
 
-    public Prompt getTagInformationPrompt(String userMessage) {
+    public Prompt getExtractUserPromptTemplate(String message) {
         Map<String, Object> params = new HashMap<>();
-        params.put("userMessage", userMessage);
-        return createPromptFromTemplate(this.tagInformationPromptTemplate, params);
+        params.put("userMessage", message);
+        return createPromptFromTemplate(this.extractUserPromptTemplate, params);
     }
 
-    public Prompt getAddPeoplePrompt(String userMessage, List<String> people) {
+    public Prompt getTagInformationPrompt(String message) {
         Map<String, Object> params = new HashMap<>();
-        params.put("userMessage", userMessage);
-        params.put("people", String.join(", ", people));
-        return createPromptFromTemplate(this.addPeoplePromptTemplate, params);
+        params.put("userMessage", message);
+        return createPromptFromTemplate(this.tagInformationPromptTemplate, params);
     }
 
     public Prompt getExtractTimePrompt(String userMessage) {
@@ -78,10 +77,9 @@ public class DeepMemorySystemPromptService {
         return createPromptFromTemplate(this.extractTimePromptTemplate, params);
     }
 
-    public Prompt getTopTopicsPrompt(List<String> topics) {
-        String topicList = String.join(", ", topics);
+    public Prompt getTopTopicsPrompt(String tagsAsLines) {
         Map<String, Object> params = new HashMap<>();
-        params.put("topicList", topicList);
+        params.put("topicList", tagsAsLines);
         return createPromptFromTemplate(this.topTopicsPromptTemplate, params);
     }
 

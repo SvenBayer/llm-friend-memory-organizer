@@ -5,6 +5,7 @@ import de.svenbayer.llm_friend_memory_organizer.model.entity.category.*;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopicEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
 
@@ -12,12 +13,12 @@ import java.util.*;
 
 @Node("Person")
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class PersonEntity extends MemoryEntity {
+public class PersonEntity {
 
-    private List<String> aliases = new ArrayList<>();
-    private boolean isUser = false;
-    private boolean isAssistant = false;
+    @Id
+    private String id = UUID.randomUUID().toString();
+
+    private Set<String> aliases = new HashSet<>();
 
     @Relationship(type = "HAS_CATEGORY", direction = Relationship.Direction.OUTGOING)
     private Set<CategoryEntity> categories = new HashSet<>();

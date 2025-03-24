@@ -1,11 +1,10 @@
 package de.svenbayer.llm_friend_memory_organizer.service;
 
-import de.svenbayer.llm_friend_memory_organizer.component.LineElementsComponent;
+import de.svenbayer.llm_friend_memory_organizer.model.message.*;
+import de.svenbayer.llm_friend_memory_organizer.model.message.lines.*;
 import de.svenbayer.llm_friend_memory_organizer.service.entity.EntityCreatorService;
+import de.svenbayer.llm_friend_memory_organizer.service.llm.MessageExtractorService;
 import de.svenbayer.llm_friend_memory_organizer.service.process.OllamaProcessService;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.vectorstore.neo4j.Neo4jVectorStore;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,99 +12,48 @@ import java.util.List;
 @Service
 public class DeepMemoryService {
 
-    private final DeepMemorySystemPromptService promptService;
-    private final ChatClient chatClient;
     private final OllamaProcessService ollamaProcessService;
-    private final Neo4jVectorStore vectorStore;
     private final EntityCreatorService entityCreatorService;
-    private final LineElementsComponent lineElementsComponent;
+    private final MessageExtractorService messageExtractorService;
 
-    public DeepMemoryService(DeepMemorySystemPromptService promptService, ChatClient.Builder chatClientBuilder, OllamaProcessService ollamaProcessService, Neo4jVectorStore vectorStore, EntityCreatorService entityCreatorService, LineElementsComponent lineElementsComponent) {
-        this.promptService = promptService;
-        this.chatClient = chatClientBuilder.build();
+    public DeepMemoryService(OllamaProcessService ollamaProcessService, EntityCreatorService entityCreatorService, MessageExtractorService messageExtractorService) {
         this.ollamaProcessService = ollamaProcessService;
-        this.vectorStore = vectorStore;
         this.entityCreatorService = entityCreatorService;
-        this.lineElementsComponent = lineElementsComponent;
+        this.messageExtractorService = messageExtractorService;
     }
 
-    public void memorizeMessage(String userMessage) {
+    public void memorizeMessage(String message) {
+        UserMessage userMessage = new UserMessage(message);
         processMessageToGraphInformation(userMessage);
         ollamaProcessService.stopOllamaContainer();
     }
 
-    private boolean processMessageToGraphInformation(String userMessage) {
+    private void processMessageToGraphInformation(UserMessage userMessage) {
         System.out.println("User message:\n" + userMessage);
 
-        String informationExtractedMessage = processToInformationMessage(userMessage);
-        String relationshipMessage = processToRelationshipMessage(userMessage);
-        String informationCategorizedMessage = processToCategorizedMessage(informationExtractedMessage, relationshipMessage);
-        String taggedInformationMessage = processToTaggedMessage(informationCategorizedMessage);
+        EnrichedMessage enrichedMessage = new EnrichedMessage();
 
-        entityCreatorService.createPeopleEntities(informationCategorizedMessage);
-        entityCreatorService.createCategoriesAndTopics(taggedInformationMessage);
-        createTopTopics(taggedInformationMessage);
-        createTimeEntities(informationExtractedMessage);
+        List<InformationExtractedLine> informationExtractedLines = messageExtractorService.extractInformationLines(userMessage);
+        enrichedMessage.setInformationExtractedLines(informationExtractedLines);
 
-        return true;
-    }
+        List<InformationExtractedLine> relationshipLines = messageExtractorService.extractRelationshipMessage(userMessage);
+        enrichedMessage.addInformationExtractedLines(relationshipLines);
 
-    private void createTimeEntities(String informationExtractedMessage) {
-        Prompt extractTimePrompt = promptService.getExtractTimePrompt(informationExtractedMessage);
-        String timeMessage = processMessage(extractTimePrompt);
-        System.out.println("Times:\n" + timeMessage);
-        entityCreatorService.createTimeEntities(timeMessage);
-    }
+        List<CategoriesExtractedLine> categoriesExtractedLines = messageExtractorService.extractCategorizedMessage(enrichedMessage);
+        enrichedMessage.setCategoriesExtractedLines(categoriesExtractedLines);
 
-    private void createTopTopics(String taggedInformationMessage) {
-        List<String> topics = entityCreatorService.extractTopics(taggedInformationMessage);
-        Prompt topTopicsPrompt = promptService.getTopTopicsPrompt(topics);
-        String topTopics = processMessage(topTopicsPrompt);
-        System.out.println("Top Topics:\n" + topTopics);
-        entityCreatorService.createTopTopics(topTopics);
-    }
+        List<UsersExtractedLine> usersLines =  messageExtractorService.extractCategorizedWithUserMessage(enrichedMessage);
+        enrichedMessage.setUsersLines(usersLines);
 
-    private String processToTaggedMessage(String informationCategorizedMessage) {
-        Prompt taggedInformationPrompt = promptService.getTagInformationPrompt(informationCategorizedMessage);
-        String taggedInformationMessage = processMessage(taggedInformationPrompt);
-        System.out.println("Tagged Information:\n" + taggedInformationMessage);
-        return taggedInformationMessage;
-    }
+        List<TagsExtractedLine> tagsExtractedLine = messageExtractorService.extractTaggedMessage(enrichedMessage);
+        enrichedMessage.setTagsExtractedLine(tagsExtractedLine);
 
-    private String processToCategorizedMessage(String informationExtractedMessage, String relationshipMessage) {
-        String enumerationWithRelationshipsMessage = lineElementsComponent.appendEnumerationList(informationExtractedMessage, relationshipMessage);
-        Prompt categorizeInformationPrompt = promptService.getCategorizeInformationPrompt(enumerationWithRelationshipsMessage);
-        String informationCategorizedMessage = processMessage(categorizeInformationPrompt);
-        System.out.println("Categorized Information:\n" + informationCategorizedMessage);
-        return informationCategorizedMessage;
-    }
+        TimeExtractedIndexes timeExtractedIndexes = messageExtractorService.extractTimeIndexesMessage(enrichedMessage);
+        enrichedMessage.setTimeExtractedIndexes(timeExtractedIndexes);
 
-    private String processToRelationshipMessage(String userMessage) {
-        Prompt relationshipConclusionPrompt = promptService.getRelationshipConclusionPrompt(userMessage);
-        String relationshipMessage = processMessage(relationshipConclusionPrompt);
-        System.out.println("Extracted Relationships\n" + relationshipMessage);
-        return relationshipMessage;
-    }
+        TopTopicsExtractedWithTags topTopicsExtractedWithTags = messageExtractorService.extractTopicMessage(enrichedMessage);
+        enrichedMessage.setTagsWithTopTopics(topTopicsExtractedWithTags);
 
-    private String processToInformationMessage(String userMessage) {
-        Prompt informationRelevantPrompt = promptService.getExtractInformationPrompt(userMessage);
-        String informationExtractedMessage = processMessage(informationRelevantPrompt);
-        System.out.println("Extracted Information:\n" + informationExtractedMessage);
-        return informationExtractedMessage;
-    }
-
-    private String processMessage(Prompt informationRelevantPrompt) {
-        String storeMessage = chatClient.prompt()
-                .user(informationRelevantPrompt.getContents())
-                .call()
-                .content();
-
-        String decisionMessage;
-        if (storeMessage.contains("</think>")) {
-            decisionMessage = storeMessage.substring(storeMessage.lastIndexOf("</think>") + 8);
-        } else {
-            decisionMessage = storeMessage;
-        }
-        return decisionMessage;
+        entityCreatorService.createEntities(enrichedMessage);
     }
 }

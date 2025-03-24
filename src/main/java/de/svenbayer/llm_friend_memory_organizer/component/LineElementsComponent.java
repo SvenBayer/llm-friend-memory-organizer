@@ -6,29 +6,34 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class LineElementsComponent {
 
+    public List<String> parseToLines(String text) {
+        return Stream.of(text.split("\n"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(line -> {
+                    if (line.matches("^\\d{1,2}\\.\\s+.*")) {
+                        return line.replaceFirst("^\\d{1,2}\\.\\s+", "");
+                    }
+                    return line;
+                })
+                .collect(Collectors.toList());
+    }
+
     public List<LineElements> parseText(String text) {
         List<LineElements> result = new ArrayList<>();
 
-        String[] lines = text.split("\n");
+        List<String> lines = parseToLines(text);
+
         for (String line : lines) {
-            // Skip empty lines
-            String trimmedLine = line.trim();
-            if (trimmedLine.isEmpty()) {
-                continue;
-            }
-
-            // Remove number prefix if present
-            if (trimmedLine.matches("^\\d{1,2}\\..*")) {
-                trimmedLine = trimmedLine.substring(trimmedLine.indexOf('.') + 1).trim();
-            }
-
             // Parse sections and elements
             LineElements lineElements = new LineElements();
-            String[] sections = trimmedLine.split(";");
+            String[] sections = line.split(";");
             for (String section : sections) {
                 lineElements.addSection(section);
             }
@@ -37,35 +42,7 @@ public class LineElementsComponent {
         return result;
     }
 
-
-    public String appendEnumerationList(String firstList, String secondList) {
-        if (firstList == null || firstList.isEmpty()) {
-            return secondList;
-        }
-        if (secondList == null || secondList.isEmpty()) {
-            return firstList;
-        }
-
-        // Find the last number in the first list
-        String[] firstLines = firstList.split("\n");
-        String lastLine = firstLines[firstLines.length - 1].trim();
-        int lastNumber = Integer.parseInt(lastLine.split("\\.")[0]);
-
-        // Update numbers in the second list
-        String[] secondLines = secondList.split("\n");
-        StringBuilder result = new StringBuilder(firstList);
-
-        for (int i = 0; i < secondLines.length; i++) {
-            String line = secondLines[i].trim();
-            if (line.isEmpty()) continue;
-
-            String content = line.substring(line.indexOf(".") + 1).trim();
-            result.append("\n").append(lastNumber + i + 1).append(". ").append(content);
-        }
-
-        return result.toString();
-    }
-
+    @Deprecated
     public List<String> extractSections(List<Integer> sectionIndexes, List<LineElements> lineElements) {
         return lineElements.stream()
                 .map(LineElements::getSections)

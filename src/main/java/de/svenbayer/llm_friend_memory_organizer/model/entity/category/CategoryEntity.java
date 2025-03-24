@@ -9,6 +9,7 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Node("Category")
 @Data
@@ -16,9 +17,9 @@ public class CategoryEntity {
 
     @Id
     @EqualsAndHashCode.Exclude
-    private String id;
+    private String id = UUID.randomUUID().toString();
 
-    private final String name;
+    private String name;
 
     @Relationship(type = "HAS_MEMORY", direction = Relationship.Direction.OUTGOING)
     private Set<MemoryEntity> memories = new HashSet<>();
