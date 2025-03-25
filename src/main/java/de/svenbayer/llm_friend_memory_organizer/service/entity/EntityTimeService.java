@@ -12,10 +12,7 @@ import de.svenbayer.llm_friend_memory_organizer.model.message.lines.TimeExtracte
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Service
@@ -44,9 +41,15 @@ public class EntityTimeService {
                 for (int lineNumber : entry.getValue()) {
                     List<MemoryEntity> memories = memoryEntityService.getMemories();
                     if (memories.size() > lineNumber && lineNumber >= 0) {
-                        MemoryEntity memoryEntity = memories.get(lineNumber - 1);
-                        memoryEntity.setStartTime(timeRangeForTimeDescription.get(0));
-                        memoryEntity.setEndTime(timeRangeForTimeDescription.get(1));
+                        InformationExtractedLine informationExtractedLine = enrichedMessage.getInformationExtractedLines().get(lineNumber);
+                        Optional<MemoryEntity> foundMemory = memories.stream()
+                                .filter(mem -> mem.getEmbeddingText().equals(informationExtractedLine.getLine()))
+                                .findFirst();
+                        if (foundMemory.isPresent()) {
+                            MemoryEntity memoryEntity = foundMemory.get();
+                            memoryEntity.setStartTime(timeRangeForTimeDescription.get(0));
+                            memoryEntity.setEndTime(timeRangeForTimeDescription.get(1));
+                        }
                     }
                 }
             }

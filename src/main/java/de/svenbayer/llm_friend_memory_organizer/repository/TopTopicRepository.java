@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface TopicRepository extends Neo4jRepository<TopicEntity, String> {
+public interface TopTopicRepository extends Neo4jRepository<TopTopicEntity, String> {
 
     /**
      * Example: custom query to call the vector similarity procedure.
@@ -26,7 +26,7 @@ public interface TopicRepository extends Neo4jRepository<TopicEntity, String> {
     ORDER BY score ASC
     LIMIT toInteger($topK)
     """)
-    List<TopicEntity> findSimilarTopics(Integer topK, float[] embedding);
+    List<TopTopicEntity> findSimilarTopics(Integer topK, float[] embedding);
 
     /**
      * Example: find all memories directly related to a given memory.
@@ -35,6 +35,6 @@ public interface TopicRepository extends Neo4jRepository<TopicEntity, String> {
         MATCH (d:Topic {id: $id})-[:RELATED_TO]->(related:Memory)
         RETURN related
         """)
-    List<TopicEntity> findDirectlyRelatedTopics(String id);
+    List<TopTopicEntity> findDirectlyRelatedTopics(String id);
 }
 

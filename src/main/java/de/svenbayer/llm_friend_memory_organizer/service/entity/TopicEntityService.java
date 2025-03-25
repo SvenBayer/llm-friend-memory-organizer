@@ -1,28 +1,29 @@
 package de.svenbayer.llm_friend_memory_organizer.service.entity;
 
-import de.svenbayer.llm_friend_memory_organizer.model.LineElements;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopTopicEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopicEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.message.EnrichedMessage;
 import de.svenbayer.llm_friend_memory_organizer.model.message.lines.TopTopicsExtractedWithTags;
+import de.svenbayer.llm_friend_memory_organizer.repository.TopTopicRepository;
 import de.svenbayer.llm_friend_memory_organizer.repository.TopicRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class TopicEntityService implements IEntityPersistingService {
 
     private final TopicRepository topicRepository;
+    private final TopTopicRepository topTopicRepository;
 
     private final Set<TopicEntity> topics;
     private final Set<TopTopicEntity> topTopics;
 
-    public TopicEntityService(TopicRepository topicRepository) {
+    public TopicEntityService(TopicRepository topicRepository, TopTopicRepository topTopicRepository) {
         this.topicRepository = topicRepository;
-        this.topics = new HashSet<>(topicRepository.findAllTopicsWithoutTopTopics());
-        this.topTopics = new HashSet<>(topicRepository.findAllTopTopics());
+        this.topTopicRepository = topTopicRepository;
+        this.topics = new HashSet<>(topicRepository.findAll());
+        this.topTopics = new HashSet<>(topTopicRepository.findAll());
     }
 
     protected void createTopTopics(EnrichedMessage enrichedMessage) {
@@ -72,6 +73,7 @@ public class TopicEntityService implements IEntityPersistingService {
 
     @Override
     public void persistData() {
-        this.topicRepository.saveAll(this.topTopics);
+        this.topicRepository.saveAll(this.topics);
+        this.topTopicRepository.saveAll(this.topTopics);
     }
 }
