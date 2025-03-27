@@ -4,7 +4,6 @@ import de.svenbayer.llm_friend_memory_organizer.model.entity.category.*;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopicEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.message.lines.CategoriesExtractedLine;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;

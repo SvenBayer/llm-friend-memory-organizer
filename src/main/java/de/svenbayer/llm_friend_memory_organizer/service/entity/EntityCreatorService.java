@@ -72,9 +72,13 @@ public class EntityCreatorService {
                 if (topics != null) {
                     for (TagsExtractedLine topic : topics) {
                         TopicEntity topicEntity = topicEntityService.getTopicEntityForName(topic);
-                        topicEntity.addMemory(memoryEntity);
-                        for (PersonEntity personEntity : personEntities) {
-                            personEntity.addTopic(topicEntity);
+                        if (topicEntity != null) {
+                            topicEntity.addMemory(memoryEntity);
+                            if (personEntities != null) {
+                                for (PersonEntity personEntity : personEntities) {
+                                    personEntity.addTopic(topicEntity);
+                                }
+                            }
                         }
                     }
                 }

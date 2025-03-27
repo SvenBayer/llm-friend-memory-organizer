@@ -71,34 +71,10 @@ public class EnrichedMessage {
         return groups;
     }
 
-    private List<String> findMatchingGroup(List<List<String>> groups, String alias) {
-        for (List<String> group : groups) {
-            for (String existing : group) {
-                if (isSimilar(alias, existing)) {
-                    // Return this group immediately (no 'break' needed)
-                    return group;
-                }
-            }
-        }
-        // Return null if no matching group was found
-        return null;
-    }
-
     private Set<String> getAliases() {
         return usersLines.values().stream()
                 .flatMap(Collection::stream)
                 .map(UsersExtractedLine::getUser)
                 .collect(Collectors.toSet());
-    }
-
-    /**
-     * Decide when two aliases should be in the same group.
-     * This example just checks substring matches ignoring case.
-     */
-    private boolean isSimilar(String a, String b) {
-        // TODO error, this matches the user's wife with the user into one group
-        String lowerA = a.toLowerCase();
-        String lowerB = b.toLowerCase();
-        return lowerA.contains(lowerB) || lowerB.contains(lowerA);
     }
 }

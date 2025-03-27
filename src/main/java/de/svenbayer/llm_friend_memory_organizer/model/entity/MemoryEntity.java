@@ -7,7 +7,6 @@ import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Node("Memory")
 @Data

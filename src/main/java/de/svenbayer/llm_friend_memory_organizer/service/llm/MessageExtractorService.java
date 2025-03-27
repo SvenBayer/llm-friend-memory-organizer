@@ -113,22 +113,6 @@ public class MessageExtractorService {
         return result;
     }
 
-    private <T> List<T> extractLinesWithSections(String answer, Function<List<String>, T> lineConstructor) {
-        List<LineElements> lineElements = lineElementsComponent.parseText(answer);
-        List<T> result = new ArrayList<>();
-        for (LineElements elements : lineElements) {
-            List<List<String>> sections = elements.getSections();
-            if (!sections.isEmpty() && sections.size() > 1) {
-                List<String> outputDataSection = sections.get(1);
-                if (sections.size() > 2) {
-                    outputDataSection.addAll(sections.get(2));
-                }
-                result.add(lineConstructor.apply(outputDataSection));
-            }
-        }
-        return result;
-    }
-
     private TopTopicsExtractedWithTags extractTopTopicsWithTags(String answer) {
         TopTopicsExtractedWithTags topTopicsWithTags = new TopTopicsExtractedWithTags();
         List<LineElements> topicsWithTopTopic = lineElementsComponent.parseText(answer);

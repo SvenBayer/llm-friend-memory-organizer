@@ -10,7 +10,6 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Node("Topic")
 @Data
@@ -21,7 +20,7 @@ public class TopicEntity {
     private String topicName;
 
     @EqualsAndHashCode.Exclude
-    private float[] embedding = new float[0];;
+    private float[] embedding = new float[0];
 
     @EqualsAndHashCode.Exclude
     @Relationship(type = "HAS_MEMORY", direction = Relationship.Direction.OUTGOING)

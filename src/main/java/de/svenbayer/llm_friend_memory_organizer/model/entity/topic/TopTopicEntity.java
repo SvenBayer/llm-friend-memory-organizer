@@ -19,7 +19,7 @@ public class TopTopicEntity {
     private String topicName;
 
     @EqualsAndHashCode.Exclude
-    private float[] embedding = new float[0];;
+    private float[] embedding = new float[0];
 
     @EqualsAndHashCode.Exclude
     @Relationship(type = "HAS_TOPIC", direction = Relationship.Direction.OUTGOING)
