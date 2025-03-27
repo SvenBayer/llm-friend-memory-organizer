@@ -20,8 +20,10 @@ public class TopicEntity {
     @Id
     private String topicName;
 
+    @EqualsAndHashCode.Exclude
     private float[] embedding = new float[0];;
 
+    @EqualsAndHashCode.Exclude
     @Relationship(type = "HAS_MEMORY", direction = Relationship.Direction.OUTGOING)
     private Set<MemoryEntity> memories = new HashSet<>();
 

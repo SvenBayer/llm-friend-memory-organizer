@@ -21,6 +21,7 @@ public class CategoryEntity {
 
     private String name;
 
+    @EqualsAndHashCode.Exclude
     @Relationship(type = "HAS_MEMORY", direction = Relationship.Direction.OUTGOING)
     private Set<MemoryEntity> memories = new HashSet<>();
 

@@ -7,10 +7,7 @@ import de.svenbayer.llm_friend_memory_organizer.model.message.lines.*;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 @Service
@@ -34,22 +31,22 @@ public class MessageExtractorService {
         return getInformationExtractedLines(answer);
     }
 
-    public List<TagsExtractedLine> extractTaggedMessage(EnrichedMessage enrichedMessage) {
+    public Map<InformationExtractedLine, List<TagsExtractedLine>> extractTaggedMessage(EnrichedMessage enrichedMessage) {
         String enumerationWithRelationshipsMessage = enrichedMessage.getInformationExtractedLinesWithNumbering();
         Prompt taggedInformationPrompt = promptService.getTagInformationPrompt(enumerationWithRelationshipsMessage);
         String answer = llmMessageProcessor.processMessage(taggedInformationPrompt);
 
         System.out.println("Tagged Information:\n" + answer);
-        return extractLinesWithSections(answer, TagsExtractedLine::new);
+        return extractLinesWithMapping(answer, InformationExtractedLine::new, TagsExtractedLine::new);
     }
 
-    public List<CategoriesExtractedLine> extractCategorizedMessage(EnrichedMessage enrichedMessage) {
+    public Map<InformationExtractedLine, List<CategoriesExtractedLine>> extractCategorizedMessage(EnrichedMessage enrichedMessage) {
         String enumerationWithRelationshipsMessage = enrichedMessage.getInformationExtractedLinesWithNumbering();
         Prompt categorizeInformationPrompt = promptService.getCategorizeInformationPrompt(enumerationWithRelationshipsMessage);
         String answer = llmMessageProcessor.processMessage(categorizeInformationPrompt);
         System.out.println("Categorized Information:\n" + answer);
 
-        return extractLinesWithSections(answer, CategoriesExtractedLine::new);
+        return extractLinesWithMapping(answer, InformationExtractedLine::new, CategoriesExtractedLine::new);
     }
 
     public List<InformationExtractedLine> extractRelationshipMessage(UserMessage userMessage) {
@@ -60,13 +57,13 @@ public class MessageExtractorService {
         return getInformationExtractedLines(answer);
     }
 
-    public List<UsersExtractedLine> extractCategorizedWithUserMessage(EnrichedMessage enrichedMessage) {
+    public Map<InformationExtractedLine, List<UsersExtractedLine>> extractCategorizedWithUserMessage(EnrichedMessage enrichedMessage) {
         String informationExtractedLinesWithNumbering = enrichedMessage.getInformationExtractedLinesWithNumbering();
         Prompt categorizedWithUserPrompt = promptService.getExtractUserPromptTemplate(informationExtractedLinesWithNumbering);
         String answer = llmMessageProcessor.processMessage(categorizedWithUserPrompt);
 
         System.out.println("Extracted Categorized with users:\n" + answer);
-        return extractLinesWithSections(answer, UsersExtractedLine::new);
+        return extractLinesWithMapping(answer, InformationExtractedLine::new, UsersExtractedLine::new);
     }
 
     public TimeExtractedIndexes extractTimeIndexesMessage(EnrichedMessage enrichedMessage) {
@@ -92,6 +89,28 @@ public class MessageExtractorService {
         return lineElements.stream()
                 .map(InformationExtractedLine::new)
                 .toList();
+    }
+
+    private <K, T> Map<K, List<T>> extractLinesWithMapping(String answer, Function<String, K> keyConstructor, Function<String, T> valueConstructor) {
+        Map<K, List<T>> result = new HashMap<>();
+
+        List<LineElements> lineElements = lineElementsComponent.parseText(answer);
+        for (LineElements elements : lineElements) {
+            List<T> values = new ArrayList<>();
+            List<List<String>> sections = elements.getSections();
+            if (!sections.isEmpty() && sections.size() > 1) {
+                List<String> outputDataSection = sections.get(1);
+                if (sections.size() > 2) {
+                    outputDataSection.addAll(sections.get(2));
+                }
+                for (String entry : outputDataSection) {
+                    values.add(valueConstructor.apply(entry));
+                }
+                K key = keyConstructor.apply(sections.getFirst().getFirst());
+                result.put(key, values);
+            }
+        }
+        return result;
     }
 
     private <T> List<T> extractLinesWithSections(String answer, Function<List<String>, T> lineConstructor) {

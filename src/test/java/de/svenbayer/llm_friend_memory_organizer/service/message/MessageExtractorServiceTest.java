@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @SpringBootTest
@@ -33,9 +34,10 @@ class MessageExtractorServiceTest {
         lines.add(new InformationExtractedLine("Sven and his boss have a professional relationship (boss/employee)"));
         enrichedMessage.setInformationExtractedLines(lines);
 
-        List<UsersExtractedLine> usersExtractedLines = messageExtractorService.extractCategorizedWithUserMessage(enrichedMessage);
-        String result = usersExtractedLines.stream()
-                .map(UsersExtractedLine::getUsers)
+        Map<InformationExtractedLine, List<UsersExtractedLine>> usersExtractedLines = messageExtractorService.extractCategorizedWithUserMessage(enrichedMessage);
+        String result = usersExtractedLines.values().stream()
+                .flatMap(List::stream)
+                .map(UsersExtractedLine::getUser)
                 .map(users -> String.join(", ", users))
                 .collect(Collectors.joining("\n"));
         System.out.println(result);

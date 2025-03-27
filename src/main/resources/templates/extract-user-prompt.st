@@ -15,14 +15,14 @@ The following is just example input that you can use to understand the task but 
 9. The sandwich is in the fridge.
 
 The following is just an example with the persons mentioned that helps you understand the task but do not take it as output data:
-1. The user's name is John.; the user (John)| John
-2. The user likes to play soccer.; the user (John)
-3. The user played soccer with his brother.; the user (John)| the user's brother (James)
-4. The user has a brother named James.; the user (John)| the user's brother (James)
-5. The user went cycling in the park with his wife.; the user (John)| the wife
-6. The user is married to his wife.; the user| the wife
+1. The user's name is John.; THE_USER_JOHN
+2. The user likes to play soccer.; THE_USER_JOHN
+3. The user played soccer with his brother.; THE_USER_JOHN| THE_USERS_BROTHER_JAMES
+4. The user has a brother named James.; THE_USER_JOHN| THE_USERS_BROTHER_JAMES
+5. The user went cycling in the park with his wife.; THE_USER_JOHN | THE_USERS_WIFE
+6. The user is married to his wife.; THE_USER_JOHN | THE_USERS_WIFE
 7. The bike is rusty.;
-8. The user talked with a woman.; the user (John)| woman
+8. The user talked with a woman.; THE_USER_JOHN | WOMAN
 9. The sandwich is in the fridge.;
 
 Only add persons that are mentioned in the sentence. Do not add any other persons. Do not add anything that is not a person.

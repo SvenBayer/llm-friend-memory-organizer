@@ -1,8 +1,8 @@
 package de.svenbayer.llm_friend_memory_organizer.model.entity.person;
 
-import de.svenbayer.llm_friend_memory_organizer.model.entity.MemoryEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.category.*;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopicEntity;
+import de.svenbayer.llm_friend_memory_organizer.model.message.lines.CategoriesExtractedLine;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -44,11 +44,11 @@ public class PersonEntity {
         topics.add(topicEntity);
     }
 
-    public List<CategoryEntity> getCategoriesForText(List<String> assignedCategories) {
+    public List<CategoryEntity> getCategoriesForText(List<CategoriesExtractedLine> assignedCategories) {
         List<CategoryEntity> categoryEntities = new ArrayList<>();
-        for (String assignedCategory : assignedCategories) {
+        for (CategoriesExtractedLine assignedCategory : assignedCategories) {
             Optional<CategoryEntity> potentialCategoryFound = categories.stream()
-                    .filter(category -> assignedCategory.contains(category.getName()))
+                    .filter(category -> assignedCategory.getCategory().contains(category.getName()))
                     .findFirst();
             potentialCategoryFound.ifPresent(categoryEntities::add);
         }

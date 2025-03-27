@@ -1,6 +1,5 @@
 package de.svenbayer.llm_friend_memory_organizer.service.entity;
 
-import de.svenbayer.llm_friend_memory_organizer.component.LineElementsComponent;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.MemoryEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.category.CategoryEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.person.PersonEntity;
@@ -41,46 +40,45 @@ public class EntityCreatorService {
 
     private void createMemoriesAndTopics(EnrichedMessage enrichedMessage) {
         List<InformationExtractedLine> informationExtractedLines = enrichedMessage.getInformationExtractedLines();
-        List<CategoriesExtractedLine> categoriesExtractedLines = enrichedMessage.getCategoriesExtractedLines();
-        List<UsersExtractedLine> usersLines = enrichedMessage.getUsersLines();
-        List<TagsExtractedLine> tagsExtractedLine = enrichedMessage.getTagsExtractedLine();
+        Map<InformationExtractedLine, List<CategoriesExtractedLine>> categoriesExtractedLines = enrichedMessage.getCategoriesExtractedLines();
+        Map<InformationExtractedLine, List<UsersExtractedLine>> usersLines = enrichedMessage.getUsersLines();
+        Map<InformationExtractedLine, List<TagsExtractedLine>> tagsExtractedLine = enrichedMessage.getTagsExtractedLine();
 
         if (!informationExtractedLines.isEmpty()) {
-            int size = informationExtractedLines.size();
-            boolean isCategoriesEmpty = isEmptyAndNotHasSizeOf(categoriesExtractedLines, size);
-            boolean isUsersEmpty = isEmptyAndNotHasSizeOf(usersLines, size);
-            boolean isTagsEmpty = isEmptyAndNotHasSizeOf(tagsExtractedLine, size);
-            if (isCategoriesEmpty && isUsersEmpty && isTagsEmpty) {
-                System.out.println("Not all necessary information is available to create memories.");
-                return;
-            }
-
-            for (int i = 0; i < size; i++) {
-                MemoryEntity memoryEntity = memoryService.createMemory(informationExtractedLines.get(i).getLine());
+            for (InformationExtractedLine memoryKey : informationExtractedLines) {
+                if (memoryKey == null || memoryKey.getLine().isEmpty()) {
+                    continue;
+                }
+                MemoryEntity memoryEntity = memoryService.createMemory(memoryKey.getLine());
 
                 memoryService.getMemories().add(memoryEntity);
 
-                Set<PersonEntity> personEntities = personEntityService.getPersonEntitiesForSection(usersLines.get(i).getUsers());
-                for (PersonEntity personEntity : personEntities) {
-                    List<CategoryEntity> categoryEntities = personEntity.getCategoriesForText(categoriesExtractedLines.get(i).getCategories());
-                    for (CategoryEntity categoryEntity : categoryEntities) {
-                        categoryEntity.addMemory(memoryEntity);
+                List<UsersExtractedLine> aliases = usersLines.get(memoryKey);
+                if (aliases == null) {
+                    aliases = new ArrayList<>();
+                }
+                Set<PersonEntity> personEntities = personEntityService.getPersonEntitiesForSection(aliases);
+                if (personEntities != null) {
+                    for (PersonEntity personEntity : personEntities) {
+                        List<CategoriesExtractedLine> assignedCategories = categoriesExtractedLines.get(memoryKey);
+                        List<CategoryEntity> categoryEntities = personEntity.getCategoriesForText(assignedCategories);
+                        for (CategoryEntity categoryEntity : categoryEntities) {
+                            categoryEntity.addMemory(memoryEntity);
+                        }
                     }
                 }
 
-                List<String> topics = tagsExtractedLine.get(i).getTags();
-                for (String topic : topics) {
-                    TopicEntity topicEntity = topicEntityService.getTopicEntityForName(topic);
-                    topicEntity.addMemory(memoryEntity);
-                    for (PersonEntity personEntity : personEntities) {
-                        personEntity.addTopic(topicEntity);
+                List<TagsExtractedLine> topics = tagsExtractedLine.get(memoryKey);
+                if (topics != null) {
+                    for (TagsExtractedLine topic : topics) {
+                        TopicEntity topicEntity = topicEntityService.getTopicEntityForName(topic);
+                        topicEntity.addMemory(memoryEntity);
+                        for (PersonEntity personEntity : personEntities) {
+                            personEntity.addTopic(topicEntity);
+                        }
                     }
                 }
             }
         }
-    }
-
-    private boolean isEmptyAndNotHasSizeOf(List lines, int size) {
-        return lines.isEmpty() || lines.size() < size;
     }
 }

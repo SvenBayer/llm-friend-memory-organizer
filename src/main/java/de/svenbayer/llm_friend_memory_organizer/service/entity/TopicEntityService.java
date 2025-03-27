@@ -3,6 +3,7 @@ package de.svenbayer.llm_friend_memory_organizer.service.entity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopTopicEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopicEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.message.EnrichedMessage;
+import de.svenbayer.llm_friend_memory_organizer.model.message.lines.TagsExtractedLine;
 import de.svenbayer.llm_friend_memory_organizer.model.message.lines.TopTopicsExtractedWithTags;
 import de.svenbayer.llm_friend_memory_organizer.repository.TopTopicRepository;
 import de.svenbayer.llm_friend_memory_organizer.repository.TopicRepository;
@@ -57,7 +58,7 @@ public class TopicEntityService implements IEntityPersistingService {
         }
     }
 
-    public TopicEntity getTopicEntityForName(String topic) {
+    public TopicEntity getTopicEntityForName(TagsExtractedLine topic) {
         Optional<TopicEntity> firstFound = this.topics.stream()
                 .filter(topicEntity -> topicEntity.getTopicName().equals(topic))
                 .findFirst();
@@ -65,7 +66,7 @@ public class TopicEntityService implements IEntityPersistingService {
             return firstFound.get();
         } else {
             TopicEntity topicEntity = new TopicEntity();
-            topicEntity.setTopicName(topic);
+            topicEntity.setTopicName(topic.getTag());
             this.topics.add(topicEntity);
             return topicEntity;
         }

@@ -15,8 +15,14 @@ public class MemoryEntity {
 
     @Id
     private String embeddingText = "";
+
+    @EqualsAndHashCode.Exclude
     private float[] embedding = new float[0];
+
+    @EqualsAndHashCode.Exclude
     private LocalDateTime startTime;
+
+    @EqualsAndHashCode.Exclude
     private LocalDateTime endTime;
 
     public MemoryEntity() {

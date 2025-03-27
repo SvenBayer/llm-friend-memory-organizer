@@ -3,6 +3,7 @@ package de.svenbayer.llm_friend_memory_organizer.service.entity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.person.PersonEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.person.UserEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.message.EnrichedMessage;
+import de.svenbayer.llm_friend_memory_organizer.model.message.lines.UsersExtractedLine;
 import de.svenbayer.llm_friend_memory_organizer.repository.PersonRepository;
 import org.springframework.stereotype.Service;
 
@@ -21,11 +22,21 @@ public class PersonEntityService implements IEntityPersistingService {
         this.people = new HashSet<>(personRepository.findAll());
     }
 
-    protected Set<PersonEntity> getPersonEntitiesForSection(List<String> aliases) {
+    protected Set<PersonEntity> getPersonEntitiesForSection(List<UsersExtractedLine> aliases) {
+        List<String> aliasStrings = aliases.stream()
+                .map(UsersExtractedLine::getUser)
+                .toList();
+
+        if (aliasStrings.contains("THE_USER") && !aliasStrings.contains("THE_USERS")) {
+            return this.people.stream()
+                    .filter(person -> person instanceof UserEntity)
+                    .collect(Collectors.toSet());
+        }
+
         return this.people.stream()
-                .filter(personEntity -> aliases.stream()
-                        .anyMatch(foundAlias -> personEntity.getAliases().stream()
-                                .anyMatch(foundAlias::contains)))
+                .filter(person -> aliasStrings.stream()
+                        .anyMatch(alias -> person.getAliases().contains(alias))
+                        && !(person instanceof UserEntity))
                 .collect(Collectors.toSet());
     }
 
@@ -45,8 +56,8 @@ public class PersonEntityService implements IEntityPersistingService {
                         .filter(person -> person.getAliases().stream()
                                 .anyMatch(existingAlias -> aliasGroup.stream()
                                         .anyMatch(newAlias ->
-                                                existingAlias.contains(newAlias) ||
-                                                        newAlias.contains(existingAlias))))
+                                                (existingAlias.contains(newAlias) ||
+                                                        newAlias.contains(existingAlias)) && !existingAlias.equals("THE_USER"))))
                         .findFirst();
             }
 
@@ -70,7 +81,7 @@ public class PersonEntityService implements IEntityPersistingService {
 
     private boolean isUser(List<String> aliasGroup) {
         return aliasGroup.stream()
-                .anyMatch(alias -> alias.contains("user"));
+                .anyMatch(alias -> alias.contains("USER") && !alias.contains("USERS"));
     }
 
     @Override

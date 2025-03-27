@@ -7,5 +7,5 @@ import java.util.List;
 @Data
 public class CategoriesExtractedLine {
 
-    private final List<String> categories;
+    private final String category;
 }

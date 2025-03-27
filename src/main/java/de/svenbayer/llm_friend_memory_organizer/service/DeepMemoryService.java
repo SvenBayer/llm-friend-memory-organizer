@@ -8,6 +8,7 @@ import de.svenbayer.llm_friend_memory_organizer.service.process.OllamaProcessSer
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class DeepMemoryService {
@@ -39,13 +40,13 @@ public class DeepMemoryService {
         List<InformationExtractedLine> relationshipLines = messageExtractorService.extractRelationshipMessage(userMessage);
         enrichedMessage.addInformationExtractedLines(relationshipLines);
 
-        List<CategoriesExtractedLine> categoriesExtractedLines = messageExtractorService.extractCategorizedMessage(enrichedMessage);
+        Map<InformationExtractedLine, List<CategoriesExtractedLine>> categoriesExtractedLines = messageExtractorService.extractCategorizedMessage(enrichedMessage);
         enrichedMessage.setCategoriesExtractedLines(categoriesExtractedLines);
 
-        List<UsersExtractedLine> usersLines =  messageExtractorService.extractCategorizedWithUserMessage(enrichedMessage);
+        Map<InformationExtractedLine, List<UsersExtractedLine>> usersLines =  messageExtractorService.extractCategorizedWithUserMessage(enrichedMessage);
         enrichedMessage.setUsersLines(usersLines);
 
-        List<TagsExtractedLine> tagsExtractedLine = messageExtractorService.extractTaggedMessage(enrichedMessage);
+        Map<InformationExtractedLine, List<TagsExtractedLine>> tagsExtractedLine = messageExtractorService.extractTaggedMessage(enrichedMessage);
         enrichedMessage.setTagsExtractedLine(tagsExtractedLine);
 
         TimeExtractedIndexes timeExtractedIndexes = messageExtractorService.extractTimeIndexesMessage(enrichedMessage);

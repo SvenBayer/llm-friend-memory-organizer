@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 @Data
 public class LineElements {
 
-    private static final String SECTION_SEPARATOR = "[|,]";
+    private static final String SECTION_SEPARATOR = "\\|";
 
     private List<List<String>> sections = new ArrayList<>();
 

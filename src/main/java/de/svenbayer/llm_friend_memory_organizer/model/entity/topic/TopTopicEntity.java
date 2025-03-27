@@ -18,8 +18,10 @@ public class TopTopicEntity {
     @Id
     private String topicName;
 
+    @EqualsAndHashCode.Exclude
     private float[] embedding = new float[0];;
 
+    @EqualsAndHashCode.Exclude
     @Relationship(type = "HAS_TOPIC", direction = Relationship.Direction.OUTGOING)
     private Set<TopicEntity> topics = new HashSet<>();
 
