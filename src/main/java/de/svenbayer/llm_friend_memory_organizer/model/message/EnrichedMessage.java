@@ -18,30 +18,11 @@ public class EnrichedMessage {
 
     private List<List<String>> groups;
 
-    public String getInformationExtractedLinesWithNumbering() {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < informationExtractedLines.size(); i++) {
-            result.append(i + 1).append(". ").append(informationExtractedLines.get(i).getLine());
-            if (i < informationExtractedLines.size() - 1) {
-                result.append("\n");
-            }
-        }
-        return result.toString();
-    }
-
     public void addInformationExtractedLines(List<InformationExtractedLine> linesToAdd) {
         List<InformationExtractedLine> result = new ArrayList<>();
         result.addAll(informationExtractedLines);
         result.addAll(linesToAdd);
         informationExtractedLines = result;
-    }
-
-    public String getTagsAsLines() {
-        // TODO check if this really works
-        return tagsExtractedLine.values().stream()
-                .flatMap(List::stream)
-                .map(line -> String.join("|", line.getTag()))
-                .collect(Collectors.joining("\n"));
     }
 
     public List<List<String>> getAliasGroups() {

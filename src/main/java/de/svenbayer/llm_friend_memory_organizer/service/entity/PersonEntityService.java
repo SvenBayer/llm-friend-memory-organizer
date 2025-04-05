@@ -27,9 +27,9 @@ public class PersonEntityService implements IEntityPersistingService {
                 .map(UsersExtractedLine::getUser)
                 .toList();
 
-        if (aliasStrings.contains("THE_USER") && !aliasStrings.contains("THE_USERS")) {
+        if (isUser(aliasStrings)) {
             return this.people.stream()
-                    .filter(person -> person instanceof UserEntity)
+                    .filter(person -> person.getId().equals("user"))
                     .collect(Collectors.toSet());
         }
 
@@ -85,7 +85,8 @@ public class PersonEntityService implements IEntityPersistingService {
     }
 
     @Override
-    public void persistData() {
+    public void completeTransaction() {
         this.personRepository.saveAll(this.people);
+        this.people.clear();
     }
 }

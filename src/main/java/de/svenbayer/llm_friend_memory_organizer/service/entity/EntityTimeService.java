@@ -33,13 +33,9 @@ public class EntityTimeService {
 
             List<DateTime> timeRangeForTimeDescription = getTimeRangeForTimeDescription(timeDescription);
             if (timeRangeForTimeDescription != null && timeRangeForTimeDescription.size() > 1) {
-//                if (timeRangeForTimeDescription.get(0).isAfterNow()) {
-//                    Integer numberLine = entry.getValue().get(0);
-//                    InformationExtractedLine lineWithTime = enrichedMessage.getInformationExtractedLines().get(numberLine - 1);
-//                    timeRangeForTimeDescription = getTimeRangeForTimeDescription(lineWithTime.getLine());
-//                }
                 for (int lineNumber : entry.getValue()) {
-                    List<MemoryEntity> memories = memoryEntityService.getMemories();
+                    lineNumber--;
+                    Set<MemoryEntity> memories = memoryEntityService.getMemories();
                     if (memories.size() > lineNumber && lineNumber >= 0) {
                         InformationExtractedLine informationExtractedLine = enrichedMessage.getInformationExtractedLines().get(lineNumber);
                         Optional<MemoryEntity> foundMemory = memories.stream()
@@ -56,7 +52,7 @@ public class EntityTimeService {
         }
     }
 
-    private List<DateTime> getTimeRangeForTimeDescription(String timeDescription) {
+    protected List<DateTime> getTimeRangeForTimeDescription(String timeDescription) {
         HawkingTimeParser parser = new HawkingTimeParser();
         DatesFound datesFound = parser.parse(timeDescription, new Date(), new HawkingConfiguration(), "eng");
         List<ParserOutput> parserOutputs = datesFound.getParserOutputs();

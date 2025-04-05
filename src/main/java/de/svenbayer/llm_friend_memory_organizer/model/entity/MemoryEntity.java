@@ -1,8 +1,10 @@
 package de.svenbayer.llm_friend_memory_organizer.model.entity;
 
+import de.svenbayer.llm_friend_memory_organizer.service.neo4j.FloatArrayConverter;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.joda.time.DateTime;
+import org.springframework.data.neo4j.core.convert.ConvertWith;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 
@@ -16,6 +18,7 @@ public class MemoryEntity {
     private String embeddingText = "";
 
     @EqualsAndHashCode.Exclude
+    @ConvertWith(converter = FloatArrayConverter.class)
     private float[] embedding = new float[0];
 
     @EqualsAndHashCode.Exclude

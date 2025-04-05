@@ -3,6 +3,7 @@ package de.svenbayer.llm_friend_memory_organizer.service.entity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.MemoryEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.category.CategoryEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.person.PersonEntity;
+import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopTopicEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopicEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.message.*;
 import de.svenbayer.llm_friend_memory_organizer.model.message.lines.CategoriesExtractedLine;
@@ -19,23 +20,36 @@ public class EntityCreatorService {
     private final MemoryEntityService memoryService;
     private final PersonEntityService personEntityService;
     private final TopicEntityService topicEntityService;
+    private final TopTopicEntityService topTopicEntityService;
     private final EntityTimeService entityTimeService;
+    private final SuggestionEntityService suggestionsEntityService;
+    private final AssumptionEntityService assumptionEntityService;
 
-    public EntityCreatorService(MemoryEntityService memoryService, PersonEntityService personEntityService, TopicEntityService topicEntityService, EntityTimeService entityTimeService) {
+    public EntityCreatorService(MemoryEntityService memoryService, PersonEntityService personEntityService, TopicEntityService topicEntityService, TopTopicEntityService toptopicEntityService, EntityTimeService entityTimeService, SuggestionEntityService suggestionsEntityService, AssumptionEntityService assumptionEntityService) {
         this.memoryService = memoryService;
         this.personEntityService = personEntityService;
         this.topicEntityService = topicEntityService;
+        this.topTopicEntityService = toptopicEntityService;
         this.entityTimeService = entityTimeService;
+        this.suggestionsEntityService = suggestionsEntityService;
+        this.assumptionEntityService = assumptionEntityService;
     }
 
     public void createEntities(EnrichedMessage enrichedMessage) {
         personEntityService.createPeopleEntities(enrichedMessage);
         createMemoriesAndTopics(enrichedMessage);
-        topicEntityService.createTopTopics(enrichedMessage);
+        Set<TopTopicEntity> topTopics = topTopicEntityService.createTopTopics(enrichedMessage);
         entityTimeService.setTimeForEntities(enrichedMessage);
 
-        personEntityService.persistData();
-        topicEntityService.persistData();
+        personEntityService.completeTransaction();
+        topicEntityService.completeTransaction();
+        topTopicEntityService.completeTransaction();
+
+        suggestionsEntityService.createSuggestions(topTopics);
+        suggestionsEntityService.completeTransaction();
+
+        assumptionEntityService.createAssumptions(topTopics);
+        assumptionEntityService.completeTransaction();
     }
 
     private void createMemoriesAndTopics(EnrichedMessage enrichedMessage) {

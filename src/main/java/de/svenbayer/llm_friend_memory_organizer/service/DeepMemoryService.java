@@ -3,6 +3,7 @@ package de.svenbayer.llm_friend_memory_organizer.service;
 import de.svenbayer.llm_friend_memory_organizer.model.message.*;
 import de.svenbayer.llm_friend_memory_organizer.model.message.lines.*;
 import de.svenbayer.llm_friend_memory_organizer.service.entity.EntityCreatorService;
+import de.svenbayer.llm_friend_memory_organizer.service.extractor.MemoryExtractorService;
 import de.svenbayer.llm_friend_memory_organizer.service.llm.MessageExtractorService;
 import de.svenbayer.llm_friend_memory_organizer.service.process.OllamaProcessService;
 import org.springframework.stereotype.Service;
@@ -16,17 +17,21 @@ public class DeepMemoryService {
     private final OllamaProcessService ollamaProcessService;
     private final EntityCreatorService entityCreatorService;
     private final MessageExtractorService messageExtractorService;
+    private final MemoryExtractorService memoryExtractorService;
 
-    public DeepMemoryService(OllamaProcessService ollamaProcessService, EntityCreatorService entityCreatorService, MessageExtractorService messageExtractorService) {
+    public DeepMemoryService(OllamaProcessService ollamaProcessService, EntityCreatorService entityCreatorService, MessageExtractorService messageExtractorService, MemoryExtractorService memoryExtractorService) {
         this.ollamaProcessService = ollamaProcessService;
         this.entityCreatorService = entityCreatorService;
         this.messageExtractorService = messageExtractorService;
+        this.memoryExtractorService = memoryExtractorService;
     }
 
-    public void memorizeMessage(String message) {
+    public RelevantMemories memorizeMessage(String message) {
         UserMessage userMessage = new UserMessage(message);
         processMessageToGraphInformation(userMessage);
+        RelevantMemories relevantMemories = memoryExtractorService.extractRelevantInformationForUserMessage(userMessage);
         ollamaProcessService.stopOllamaContainer();
+        return relevantMemories;
     }
 
     private void processMessageToGraphInformation(UserMessage userMessage) {

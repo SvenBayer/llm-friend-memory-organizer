@@ -1,5 +1,6 @@
 package de.svenbayer.llm_friend_memory_organizer.controller;
 
+import de.svenbayer.llm_friend_memory_organizer.model.message.RelevantMemories;
 import de.svenbayer.llm_friend_memory_organizer.service.DeepMemoryService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,7 +16,7 @@ public class DeepMemoryController {
     }
 
     @PostMapping("/memorizeMessage")
-    public void memorizeMessage(@RequestBody String userMessage) {
-        deepMemoryService.memorizeMessage(userMessage);
+    public RelevantMemories memorizeMessage(@RequestBody String userMessage) {
+        return deepMemoryService.memorizeMessage(userMessage);
     }
 }

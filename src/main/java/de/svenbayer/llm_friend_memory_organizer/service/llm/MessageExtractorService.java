@@ -32,8 +32,7 @@ public class MessageExtractorService {
     }
 
     public Map<InformationExtractedLine, List<TagsExtractedLine>> extractTaggedMessage(EnrichedMessage enrichedMessage) {
-        String enumerationWithRelationshipsMessage = enrichedMessage.getInformationExtractedLinesWithNumbering();
-        Prompt taggedInformationPrompt = promptService.getTagInformationPrompt(enumerationWithRelationshipsMessage);
+        Prompt taggedInformationPrompt = promptService.getTagInformationPrompt(enrichedMessage.getInformationExtractedLines());
         String answer = llmMessageProcessor.processMessage(taggedInformationPrompt);
 
         System.out.println("Tagged Information:\n" + answer);
@@ -41,8 +40,7 @@ public class MessageExtractorService {
     }
 
     public Map<InformationExtractedLine, List<CategoriesExtractedLine>> extractCategorizedMessage(EnrichedMessage enrichedMessage) {
-        String enumerationWithRelationshipsMessage = enrichedMessage.getInformationExtractedLinesWithNumbering();
-        Prompt categorizeInformationPrompt = promptService.getCategorizeInformationPrompt(enumerationWithRelationshipsMessage);
+        Prompt categorizeInformationPrompt = promptService.getCategorizeInformationPrompt(enrichedMessage.getInformationExtractedLines());
         String answer = llmMessageProcessor.processMessage(categorizeInformationPrompt);
         System.out.println("Categorized Information:\n" + answer);
 
@@ -58,8 +56,7 @@ public class MessageExtractorService {
     }
 
     public Map<InformationExtractedLine, List<UsersExtractedLine>> extractCategorizedWithUserMessage(EnrichedMessage enrichedMessage) {
-        String informationExtractedLinesWithNumbering = enrichedMessage.getInformationExtractedLinesWithNumbering();
-        Prompt categorizedWithUserPrompt = promptService.getExtractUserPromptTemplate(informationExtractedLinesWithNumbering);
+        Prompt categorizedWithUserPrompt = promptService.getExtractUserPromptTemplate(enrichedMessage.getInformationExtractedLines());
         String answer = llmMessageProcessor.processMessage(categorizedWithUserPrompt);
 
         System.out.println("Extracted Categorized with users:\n" + answer);
@@ -67,16 +64,14 @@ public class MessageExtractorService {
     }
 
     public TimeExtractedIndexes extractTimeIndexesMessage(EnrichedMessage enrichedMessage) {
-        String informationExtractedLinesWithNumbering = enrichedMessage.getInformationExtractedLinesWithNumbering();
-        Prompt extractTimePrompt = promptService.getExtractTimePrompt(informationExtractedLinesWithNumbering);
+        Prompt extractTimePrompt = promptService.getExtractTimePrompt(enrichedMessage.getInformationExtractedLines());
         String answer = llmMessageProcessor.processMessage(extractTimePrompt);
         System.out.println("Times:\n" + answer);
         return getTimeExtractedIndexes(answer);
     }
 
     public TopTopicsExtractedWithTags extractTopicMessage(EnrichedMessage enrichedMessage) {
-        String tagsAsLines = enrichedMessage.getTagsAsLines();
-        Prompt extractTopTopicsPrompt = promptService.getTopTopicsPrompt(tagsAsLines);
+        Prompt extractTopTopicsPrompt = promptService.getTopTopicsPrompt(enrichedMessage.getTagsExtractedLine());
         String answer = llmMessageProcessor.processMessage(extractTopTopicsPrompt);
 
         System.out.println("Top Topics:\n" + answer);

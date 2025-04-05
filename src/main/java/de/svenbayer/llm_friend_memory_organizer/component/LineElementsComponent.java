@@ -12,12 +12,23 @@ import java.util.stream.Stream;
 @Component
 public class LineElementsComponent {
 
+    public static final String NUMBERED_LINE_REGEX = "^\\d{1,2}\\.\\s+.*";
+
+    public String extractNumberedAnswers(String text) {
+        return Stream.of(text.split("\n"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .filter(s -> s.matches(NUMBERED_LINE_REGEX))
+                .collect(Collectors.joining("\n"));
+    }
+
     public List<String> parseToLines(String text) {
         return Stream.of(text.split("\n"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
+                .filter(s -> s.matches(NUMBERED_LINE_REGEX)) // TODO check if this breaks anything
                 .map(line -> {
-                    if (line.matches("^\\d{1,2}\\.\\s+.*")) {
+                    if (line.matches(NUMBERED_LINE_REGEX)) {
                         return line.replaceFirst("^\\d{1,2}\\.\\s+", "");
                     }
                     return line;

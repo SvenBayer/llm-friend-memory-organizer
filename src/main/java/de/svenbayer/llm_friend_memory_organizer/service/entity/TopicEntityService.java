@@ -1,12 +1,9 @@
 package de.svenbayer.llm_friend_memory_organizer.service.entity;
 
-import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopTopicEntity;
 import de.svenbayer.llm_friend_memory_organizer.model.entity.topic.TopicEntity;
-import de.svenbayer.llm_friend_memory_organizer.model.message.EnrichedMessage;
 import de.svenbayer.llm_friend_memory_organizer.model.message.lines.TagsExtractedLine;
-import de.svenbayer.llm_friend_memory_organizer.model.message.lines.TopTopicsExtractedWithTags;
-import de.svenbayer.llm_friend_memory_organizer.repository.TopTopicRepository;
 import de.svenbayer.llm_friend_memory_organizer.repository.TopicRepository;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -15,66 +12,50 @@ import java.util.*;
 public class TopicEntityService implements IEntityPersistingService {
 
     private final TopicRepository topicRepository;
-    private final TopTopicRepository topTopicRepository;
+    private final EmbeddingModel embeddingModel;
 
-    private final Set<TopicEntity> topics;
-    private final Set<TopTopicEntity> topTopics;
+    private final Set<TopicEntity> topics = new HashSet<>();
 
-    public TopicEntityService(TopicRepository topicRepository, TopTopicRepository topTopicRepository) {
+    public TopicEntityService(TopicRepository topicRepository, EmbeddingModel embeddingModel) {
         this.topicRepository = topicRepository;
-        this.topTopicRepository = topTopicRepository;
-        this.topics = new HashSet<>(topicRepository.findAll());
-        this.topTopics = new HashSet<>(topTopicRepository.findAll());
-    }
-
-    protected void createTopTopics(EnrichedMessage enrichedMessage) {
-        TopTopicsExtractedWithTags tagsWithTopTopics = enrichedMessage.getTagsWithTopTopics();
-        Map<String, Set<String>> topTopicsWithTags = tagsWithTopTopics.getTopTopicsWithTags();
-
-        for (Map.Entry<String, Set<String>> entry : topTopicsWithTags.entrySet()) {
-            TopTopicEntity topTopic = getTopTopicEntityForName(entry.getKey());
-            Set<String> topicsToLink = entry.getValue();
-            for (TopicEntity topicEntity : this.topics) {
-                for (String top : topicsToLink) {
-                    if (topicEntity.getTopicName().equals(top)) {
-                        topTopic.addTopic(topicEntity);
-                    }
-                }
-            }
-        }
-    }
-
-    private TopTopicEntity getTopTopicEntityForName(String topTopic) {
-        Optional<TopTopicEntity> firstFound = this.topTopics.stream()
-                .filter(topicEntity -> topicEntity.getTopicName().equals(topTopic))
-                .findFirst();
-        if (firstFound.isPresent()) {
-            return firstFound.get();
-        } else {
-            TopTopicEntity topTopicEntity = new TopTopicEntity();
-            topTopicEntity.setTopicName(topTopic);
-            this.topTopics.add(topTopicEntity);
-            return topTopicEntity;
-        }
+        this.topicRepository.createIndexIfNotExists();
+        this.embeddingModel = embeddingModel;
     }
 
     public TopicEntity getTopicEntityForName(TagsExtractedLine topic) {
         Optional<TopicEntity> firstFound = this.topics.stream()
-                .filter(topicEntity -> topicEntity.getTopicName().equals(topic))
+                .filter(topicEntity -> topicEntity.getTopicName().equals(topic.getTag()))
                 .findFirst();
         if (firstFound.isPresent()) {
             return firstFound.get();
         } else {
-            TopicEntity topicEntity = new TopicEntity();
-            topicEntity.setTopicName(topic.getTag());
+            TopicEntity topicEntity = createTopicEntity(topic.getTag());
             this.topics.add(topicEntity);
             return topicEntity;
         }
     }
 
+    public TopicEntity createTopicEntity(String text) {
+        TopicEntity topicEntity = new TopicEntity();
+        topicEntity.setTopicName(text);
+        float[] emb = embeddingModel.embed(text);
+        topicEntity.setEmbedding(emb);
+
+        if (this.topics.contains(topicEntity)) {
+            return topicEntity;
+        }
+
+        TopicEntity sameTopic = topicRepository.findSameTopic(emb);
+        if (sameTopic != null) {
+            return sameTopic;
+        }
+
+        return topicEntity;
+    }
+
     @Override
-    public void persistData() {
+    public void completeTransaction() {
         this.topicRepository.saveAll(this.topics);
-        this.topTopicRepository.saveAll(this.topTopics);
+        this.topics.clear();
     }
 }

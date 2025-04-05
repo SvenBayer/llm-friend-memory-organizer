@@ -7,11 +7,12 @@ Instructions:
 - For each summarizing keyword, output one line in the following format:
 - `keyword1| keyword2| keyword3; SummarizingKeyword`
 - The summarizing keyword must have matching keywords
+- Ensure that the output is a numbered list.
 - Do not provide any additional text or explanations.
 ---
 Input keywords: "{topicList}"
 ---
 
 Output:
-A list of lines, each with a group of related keywords separated by pipe, followed by a semicolon and one summarizing keyword.
+A numbered list of lines, each with a group of related keywords separated by pipe, followed by a semicolon and one summarizing keyword.
 Nothing else.

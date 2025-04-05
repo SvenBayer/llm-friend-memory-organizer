@@ -8,7 +8,7 @@ spring:
     uri: bolt://localhost:7687
     authentication:
       username: neo4j
-      password: myTh0ughtsAreMine! # highly unsecure but it's a demo
+      password: mysuperunsecurepw # highly unsecure but it's a demo
   ai:
     ollama:
       chat:
@@ -25,10 +25,10 @@ spring:
       neo4j:
         initialize-schema: true
         database-name: neo4j
-        index-name: memory-index
-        dimensions: 768
-        distance-type: cosine
-        batching-strategy: 100
+        #index-name: memory_index
+        #dimensions: 768
+        #distance-type: cosine
+        #batching-strategy: 100
   docker:
     compose:
       readiness:
