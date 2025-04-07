@@ -8,16 +8,14 @@ import de.svenbayer.llm_friend_memory_organizer.model.entity.inferred.Suggestion
 import de.svenbayer.llm_friend_memory_organizer.model.message.*;
 import de.svenbayer.llm_friend_memory_organizer.model.message.lines.InformationExtractedLine;
 import de.svenbayer.llm_friend_memory_organizer.model.message.lines.TagsExtractedLine;
+import org.joda.time.DateTime;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class DeepMemorySystemPromptService {
@@ -102,6 +100,8 @@ public class DeepMemorySystemPromptService {
     public Prompt getExtractTimePrompt(List<InformationExtractedLine> informationExtractedLines) {
         String numberedList = toLlmTextConverter.getNumberedListForList(informationExtractedLines, InformationExtractedLine::getLine);
         Map<String, Object> params = new HashMap<>();
+        Date now = DateTime.now().toDate();
+        params.put("nowDate", now);
         params.put("userMessage", numberedList);
         return createPromptFromTemplate(this.extractTimePromptTemplate, params);
     }
