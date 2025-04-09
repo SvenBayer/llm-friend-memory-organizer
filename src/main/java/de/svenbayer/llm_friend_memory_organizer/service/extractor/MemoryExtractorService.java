@@ -31,9 +31,9 @@ public class MemoryExtractorService {
     private final LineElementsComponent lineElementsComponent;
     private final SuggestionRepository suggestionRepository;
     private final AssumptionRepository assumptionRepository;
-    private final HumanReadibleDateFormatter humanReadibleDateFormatter;
+    private final MemoryFormatterService memoryFormatterService;
 
-    public MemoryExtractorService(MemoryRepository memoryRepository, EmbeddingModel embeddingModel, LlmMessageProcessor llmMessageProcessor, DeepMemorySystemPromptService promptService, LineElementsComponent lineElementsComponent, SuggestionRepository suggestionRepository, AssumptionRepository assumptionRepository, HumanReadibleDateFormatter humanReadibleDateFormatter) {
+    public MemoryExtractorService(MemoryRepository memoryRepository, EmbeddingModel embeddingModel, LlmMessageProcessor llmMessageProcessor, DeepMemorySystemPromptService promptService, LineElementsComponent lineElementsComponent, SuggestionRepository suggestionRepository, AssumptionRepository assumptionRepository, MemoryFormatterService memoryFormatterService) {
         this.memoryRepository = memoryRepository;
         this.embeddingModel = embeddingModel;
         this.llmMessageProcessor = llmMessageProcessor;
@@ -41,32 +41,26 @@ public class MemoryExtractorService {
         this.lineElementsComponent = lineElementsComponent;
         this.suggestionRepository = suggestionRepository;
         this.assumptionRepository = assumptionRepository;
-        this.humanReadibleDateFormatter = humanReadibleDateFormatter;
+        this.memoryFormatterService = memoryFormatterService;
     }
 
     public RelevantMemories extractRelevantInformationForUserMessage(UserMessage userMessage) {
         String relevantMemories = extractRelevantMemories(userMessage);
         if (relevantMemories != null && !relevantMemories.isEmpty()) {
-            Set<String> relevantMemoryIds = findRelevantMemoryEntities(relevantMemories);
+            Set<String> relevantMemoryIds = parseRelevantMemoryEntities(relevantMemories);
             if (!relevantMemoryIds.isEmpty()) {
                 String relevantAssumptions = extractRelevantAssumptions(relevantMemoryIds);
                 String relevantSuggestions = extractRelevantSuggestions(relevantMemoryIds);
                 List<MemoryEntity> memoryEntities = memoryRepository.findAllById(relevantMemoryIds);
 
-                StringBuilder memBuilder = new StringBuilder();
-                for (int i = 0; i < memoryEntities.size(); i++) {
-                    MemoryEntity memoryEntity = memoryEntities.get(i);
-                    String pre = humanReadibleDateFormatter.formatDateToHumanReadible(memoryEntity.getStartTime().toLocalDate());
-                    memBuilder.append(i + 1).append(". ").append(pre).append(memoryEntity.getEmbeddingText()).append("\n");
-                }
-                String relevantMemoriesText = memBuilder.toString();
+                String relevantMemoriesText = memoryFormatterService.getAddReadibleTimeToMemories(memoryEntities);
                 return new RelevantMemories(relevantMemoriesText, relevantAssumptions, relevantSuggestions);
             }
         }
         return null;
     }
 
-    private Set<String> findRelevantMemoryEntities(String relevantMemories) {
+    private Set<String> parseRelevantMemoryEntities(String relevantMemories) {
         return new HashSet<>(lineElementsComponent.parseToLines(relevantMemories));
     }
 

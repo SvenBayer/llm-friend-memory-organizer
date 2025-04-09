@@ -19,7 +19,7 @@ public class PersonEntityService implements IEntityPersistingService {
 
     public PersonEntityService(PersonRepository personRepository) {
         this.personRepository = personRepository;
-        this.people = new HashSet<>(personRepository.findAll());
+        this.people = new HashSet<>();
     }
 
     protected Set<PersonEntity> getPersonEntitiesForSection(List<UsersExtractedLine> aliases) {
@@ -44,29 +44,20 @@ public class PersonEntityService implements IEntityPersistingService {
         List<List<String>> groupedAliases =  enrichedMessage.getAliasGroups();
 
         for (List<String> aliasGroup : groupedAliases) {
-            Optional<PersonEntity> existingPerson;
-
             boolean isUser = isUser(aliasGroup);
-            if (isUser) {
-                existingPerson = this.people.stream()
-                        .filter(personEntity -> personEntity instanceof UserEntity)
-                        .findFirst();
-            } else {
-                existingPerson = this.people.stream()
-                        .filter(person -> person.getAliases().stream()
-                                .anyMatch(existingAlias -> aliasGroup.stream()
-                                        .anyMatch(newAlias ->
-                                                (existingAlias.contains(newAlias) ||
-                                                        newAlias.contains(existingAlias)) && !existingAlias.equals("THE_USER"))))
-                        .findFirst();
-            }
+            Optional<PersonEntity> existingPerson = findPersonEntityInList(aliasGroup, isUser);
 
             if (existingPerson.isPresent()) {
                 // Add new aliases to existing person
                 PersonEntity personEntity = existingPerson.get();
                 personEntity.addAliases(aliasGroup);
             } else {
-                // Create new person
+                PersonEntity personFromDatabase = findPersonInDatabase(aliasGroup, isUser);
+
+                if (personFromDatabase != null) {
+                    this.people.add(personFromDatabase);
+                    return;
+                }
                 PersonEntity newPerson;
                 if (isUser) {
                     newPerson = new UserEntity();
@@ -77,6 +68,39 @@ public class PersonEntityService implements IEntityPersistingService {
                 this.people.add(newPerson);
             }
         }
+    }
+
+    private PersonEntity findPersonInDatabase(List<String> aliasGroup, boolean isUser) {
+        if (isUser) {
+            return personRepository.findUser();
+        }
+        for (String alias : aliasGroup) {
+            List<PersonEntity> existingPersons = personRepository.findPersonsWithMatchingAlias(alias);
+            if (!existingPersons.isEmpty()) {
+                PersonEntity personEntity = existingPersons.getFirst();
+                personEntity.addAliases(aliasGroup);
+                return personEntity;
+            }
+        }
+        return null;
+    }
+
+    private Optional<PersonEntity> findPersonEntityInList(List<String> aliasGroup, boolean isUser) {
+        Optional<PersonEntity> existingPerson;
+        if (isUser) {
+            existingPerson = this.people.stream()
+                    .filter(personEntity -> personEntity instanceof UserEntity)
+                    .findFirst();
+        } else {
+            existingPerson = this.people.stream()
+                    .filter(person -> person.getAliases().stream()
+                            .anyMatch(existingAlias -> aliasGroup.stream()
+                                    .anyMatch(newAlias ->
+                                            (existingAlias.contains(newAlias) ||
+                                                    newAlias.contains(existingAlias)) && !existingAlias.equals("THE_USER"))))
+                    .findFirst();
+        }
+        return existingPerson;
     }
 
     private boolean isUser(List<String> aliasGroup) {
